@@ -18,6 +18,7 @@ const test = require("./routes/test");
 const Product = require("./routes/products");
 const Category = require("./routes/category");
 const sinhVienRouter = require("./routes/sinhVienRouter"); // Route cho sinh viên
+const book = require("./routes/books");
 
 // Kết nối MongoDB
 mongoose
@@ -44,6 +45,7 @@ app.use("/test", test);
 app.use("/products", Product);
 app.use("/category", Category);
 app.use("/sinhvien", sinhVienRouter); // Sử dụng route cho sinh viên
+app.use("/book", book);
 
 // Xử lý lỗi 404
 app.use(function (req, res, next) {
