@@ -14,18 +14,18 @@ router.get("/all", async function (req, res) {
   if(token){
     JWT.verify(token, config.SECRETKEY, async function (err, id){
       if(err){
-        res.status(403).json({"status": false, message : "XAY RA LOI: " + err});
+        res.status(403).json({"status": false, message: "Có lỗi xảy ra"});
       }else{
-        //xử lý chức năng tương ứng với API
-        const sinhviens = await SinhVien.find();
-    res.status(200).json(sinhviens);
+        var list = await sinhvien.find(); 
+        res.status(200).json(list);
       }
     });
   }else{
-    res.status(401).json({"status": false , message :"khong xax thuc"});
+    res.status(401).json({status: false, message: "Không xác thực"});
   }
-  } catch (err) {
-    res.status(400).json({ "status": false , message :"khong xax thuc" + err });
+   
+  } catch (e) {
+    res.status(400).json({ status: false, message: "Có lỗi xảy ra: " + e }); 
   }
 });
 
@@ -188,4 +188,5 @@ router.post("/send-mail", async function(req, res, next){
     res.json({ status: 0, message: "Gửi mail thất bại"});
   }
 });
+
 module.exports = router;

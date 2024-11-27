@@ -45,7 +45,7 @@ app.use("/test", test);
 app.use("/products", Product);
 app.use("/category", Category);
 app.use("/sinhvien", sinhVienRouter); // Sử dụng route cho sinh viên
-app.use("/book", book);
+app.use("/book", books);
 
 // Xử lý lỗi 404
 app.use(function (req, res, next) {
