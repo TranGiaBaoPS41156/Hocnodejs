@@ -6,28 +6,33 @@ var sendMail = require("../util/email");
 const JWT = require('jsonwebtoken');
 const config = require("../util/tokenConfig");
 
-// Lấy toàn bộ danh sách sinh viênSs
+// Lấy toàn bộ danh sách sinh viên
 router.get("/all", async function (req, res) {
   try {
-    // token
-    const token = req.header("Authorization").split(' ')[1];
-  if(token){
-    JWT.verify(token, config.SECRETKEY, async function (err, id){
-      if(err){
-        res.status(403).json({"status": false, message: "Có lỗi xảy ra"});
-      }else{
-        var list = await sinhvien.find(); 
-        res.status(200).json(list);
+    // Lấy token từ header
+    const authHeader = req.header("Authorization");
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ status: false, message: "Không tìm thấy token hoặc định dạng sai" });
+    }
+
+    const token = authHeader.split(' ')[1]; // Lấy phần token
+
+    // Xác thực token
+    JWT.verify(token, config.SECRETKEY, async function (err, decoded) {
+      if (err) {
+        return res.status(403).json({ status: false, message: "Token không hợp lệ hoặc hết hạn" });
       }
+
+      // Token hợp lệ, truy vấn danh sách sinh viên
+      const list = await SinhVien.find(); 
+      res.status(200).json(list);
     });
-  }else{
-    res.status(401).json({status: false, message: "Không xác thực"});
-  }
-   
   } catch (e) {
-    res.status(400).json({ status: false, message: "Có lỗi xảy ra: " + e }); 
+    res.status(400).json({ status: false, message: "Có lỗi xảy ra: " + e.message });
   }
 });
+
 
 // Lấy toàn bộ danh sách sinh viên thuộc khoa CNTT
 router.get("/cntt", async function (req, res) {

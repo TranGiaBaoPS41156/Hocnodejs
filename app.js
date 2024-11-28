@@ -22,7 +22,7 @@ const book = require("./routes/books");
 
 // Kết nối MongoDB
 mongoose
-  .connect("mongodb+srv://baotgps41156:Baogt8213%40ps41156@cluster0.ca8kl.mongodb.net/md19302")
+  .connect("mongodb://127.0.0.1/md19302")
   .then(() => console.log(">>>>>>>>>> DB Connected!!!!!!"))
   .catch((err) => console.log(">>>>>>>>> DB Error: ", err));
 
@@ -45,7 +45,7 @@ app.use("/test", test);
 app.use("/products", Product);
 app.use("/category", Category);
 app.use("/sinhvien", sinhVienRouter); // Sử dụng route cho sinh viên
-app.use("/book", books);
+app.use("/book", book);
 
 // Xử lý lỗi 404
 app.use(function (req, res, next) {
