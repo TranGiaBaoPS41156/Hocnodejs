@@ -5,23 +5,26 @@ const JWT = require("jsonwebtoken");
 const config = require("../util/tokenConfig");
 const upload = require("../util/Upload");
 
-// 1. Lấy toàn bộ danh sách sách
-router.get("/all", async (req, res) => {
+// Lấy toàn bộ danh sách sinh viên
+router.get("/all", async function (req, res) {
   try {
+    // Lấy token từ header
     const authHeader = req.header("Authorization");
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return res.status(401).json({ status: false, message: "Không tìm thấy token hoặc định dạng sai" });
     }
 
-    const token = authHeader.split(" ")[1];
+    const token = authHeader.split(' ')[1]; // Lấy phần token
 
-    JWT.verify(token, config.SECRETKEY, async (err, decoded) => {
+    // Xác thực token
+    JWT.verify(token, config.SECRETKEY, async function (err, decoded) {
       if (err) {
         return res.status(403).json({ status: false, message: "Token không hợp lệ hoặc hết hạn" });
       }
 
-      const list = await book.find();
+      // Token hợp lệ, truy vấn danh sách sinh viên
+      const list = await book.find(); 
       res.status(200).json(list);
     });
   } catch (e) {

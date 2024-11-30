@@ -10,6 +10,7 @@ require("./models/User");
 require("./models/product");
 require("./models/category");
 require("./models/sinhvien");
+require("./models/book");
 
 // Import routes
 const indexRouter = require("./routes/index");
