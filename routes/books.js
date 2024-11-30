@@ -1,45 +1,39 @@
 const express = require("express");
 const router = express.Router();
-const Sach = require("../models/book"); // Import model Sach
+const book = require("../models/book"); // Import model Book
 const JWT = require("jsonwebtoken");
 const config = require("../util/tokenConfig");
 const upload = require("../util/Upload");
 
-
-// Middleware kiểm tra JWT
-function verifyToken(req, res, next) {
+// 1. Lấy toàn bộ danh sách sách
+router.get("/all", async (req, res) => {
   try {
-    const token = req.header("Authorization").split(" ")[1];
-    if (token) {
-      JWT.verify(token, config.SECRETKEY, (err) => {
-        if (err) {
-          return res.status(403).json({ status: false, message: "Token không hợp lệ" });
-        }
-        next();
-      });
-    } else {
-      res.status(401).json({ status: false, message: "Chưa xác thực" });
+    const authHeader = req.header("Authorization");
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ status: false, message: "Không tìm thấy token hoặc định dạng sai" });
     }
-  } catch (err) {
-    res.status(400).json({ status: false, message: "Có lỗi xảy ra" });
-  }
-}
 
-// 1. Lấy danh sách tất cả sách
-router.get("/all", verifyToken, async (req, res) => {
-  try {
-    const sachList = await Sach.find();
-    res.status(200).json(sachList);
-  } catch (err) {
-    res.status(400).json({ status: false, message: err.message });
+    const token = authHeader.split(" ")[1];
+
+    JWT.verify(token, config.SECRETKEY, async (err, decoded) => {
+      if (err) {
+        return res.status(403).json({ status: false, message: "Token không hợp lệ hoặc hết hạn" });
+      }
+
+      const list = await book.find();
+      res.status(200).json(list);
+    });
+  } catch (e) {
+    res.status(400).json({ status: false, message: "Có lỗi xảy ra: " + e.message });
   }
 });
 
 // 2. Lấy sách thuộc thể loại cụ thể
 router.get("/theloai/:theLoai", async (req, res) => {
   try {
-    const sachList = await Sach.find({ theLoai: req.params.theLoai });
-    res.status(200).json(sachList);
+    const bookList = await book.find({ theLoai: req.params.theLoai });
+    res.status(200).json(bookList);
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
@@ -48,9 +42,9 @@ router.get("/theloai/:theLoai", async (req, res) => {
 // 3. Tìm sách có giá trong khoảng
 router.get("/gia", async (req, res) => {
   try {
-    const { min = 0, max = 100000 } = req.query; // Mặc định khoảng giá
-    const sachList = await Sach.find({ gia: { $gte: min, $lte: max } });
-    res.status(200).json(sachList);
+    const { min = 0, max = 100000 } = req.query;
+    const bookList = await book.find({ gia: { $gte: min, $lte: max } });
+    res.status(200).json(bookList);
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
@@ -59,7 +53,7 @@ router.get("/gia", async (req, res) => {
 // 4. Tìm sách theo tên
 router.get("/detail/:tenSach", async (req, res) => {
   try {
-    const sach = await Sach.findOne({ tenSach: req.params.tenSach });
+    const sach = await book.findOne({ tenSach: req.params.tenSach });
     if (sach) {
       res.status(200).json(sach);
     } else {
@@ -74,8 +68,8 @@ router.get("/detail/:tenSach", async (req, res) => {
 router.post("/add", async (req, res) => {
   try {
     const { tenSach, tacGia, theLoai, gia, soLuongTon } = req.body;
-    const newSach = new Sach({ tenSach, tacGia, theLoai, gia, soLuongTon });
-    await newSach.save();
+    const newbook = new book({ tenSach, tacGia, theLoai, gia, soLuongTon });
+    await newbook.save();
     res.status(201).json({ status: true, message: "Thêm sách thành công" });
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -86,7 +80,7 @@ router.post("/add", async (req, res) => {
 router.put("/edit/:id", async (req, res) => {
   try {
     const { tenSach, tacGia, theLoai, gia, soLuongTon } = req.body;
-    const sach = await Sach.findById(req.params.id);
+    const sach = await book.findById(req.params.id);
 
     if (sach) {
       sach.tenSach = tenSach || sach.tenSach;
@@ -108,7 +102,7 @@ router.put("/edit/:id", async (req, res) => {
 // 7. Xóa sách theo ID
 router.delete("/delete/:id", async (req, res) => {
   try {
-    const sach = await Sach.findByIdAndDelete(req.params.id);
+    const sach = await book.findByIdAndDelete(req.params.id);
     if (sach) {
       res.status(200).json({ status: true, message: "Xóa sách thành công" });
     } else {
@@ -122,7 +116,7 @@ router.delete("/delete/:id", async (req, res) => {
 // 8. Lấy sách có giá cao nhất
 router.get("/max-gia", async (req, res) => {
   try {
-    const sach = await Sach.findOne().sort({ gia: -1 });
+    const sach = await book.findOne().sort({ gia: -1 });
     res.status(200).json(sach);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -132,7 +126,7 @@ router.get("/max-gia", async (req, res) => {
 // 9. Lấy sách có số lượng tồn ít nhất
 router.get("/min-stock", async (req, res) => {
   try {
-    const sach = await Sach.findOne().sort({ soLuongTon: 1 });
+    const sach = await book.findOne().sort({ soLuongTon: 1 });
     res.status(200).json(sach);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -155,5 +149,4 @@ router.post("/upload", [upload.single("image")], async (req, res) => {
   }
 });
 
-// Export router
 module.exports = router;

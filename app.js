@@ -22,7 +22,7 @@ const book = require("./routes/books");
 
 // Kết nối MongoDB
 mongoose
-  .connect("mongodb://127.0.0.1/md19302")
+  .connect("mongodb+srv://baotgps41156:Baogt8213%40ps41156@cluster0.ca8kl.mongodb.net/md19302")
   .then(() => console.log(">>>>>>>>>> DB Connected!!!!!!"))
   .catch((err) => console.log(">>>>>>>>> DB Error: ", err));
 

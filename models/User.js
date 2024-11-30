@@ -6,7 +6,7 @@ const user = new Schema({
   username: {
     type: String, // kiểu dữ liệu
   },
-  passWord: {
+  password: {
     type: String,
   },
   fullName: {
