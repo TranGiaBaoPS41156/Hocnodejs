@@ -5,32 +5,44 @@ const JWT = require("jsonwebtoken");
 const config = require("../util/tokenConfig");
 const upload = require("../util/Upload");
 
-// Lấy toàn bộ danh sách sinh viên
 router.get("/all", async function (req, res) {
   try {
     // Lấy token từ header
     const authHeader = req.header("Authorization");
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({ status: false, message: "Không tìm thấy token hoặc định dạng sai" });
+      return res.status(401).json({
+        status: false,
+        message: "Không tìm thấy token hoặc định dạng sai",
+      });
     }
 
-    const token = authHeader.split(' ')[1]; // Lấy phần token
+    const token = authHeader.split(" ")[1]; // Lấy phần token
 
     // Xác thực token
-    JWT.verify(token, config.SECRETKEY, async function (err, decoded) {
+    JWT.verify(token, config.SECRETKEY, async (err, decoded) => {
       if (err) {
-        return res.status(403).json({ status: false, message: "Token không hợp lệ hoặc hết hạn" });
+        console.error("Token verification error:", err.message); // Log lỗi token
+        return res.status(403).json({
+          status: false,
+          message: "Token không hợp lệ hoặc hết hạn",
+        });
       }
 
-      // Token hợp lệ, truy vấn danh sách sinh viên
-      const list = await book.find(); 
-      res.status(200).json(list);
+      console.log("Token verified. Decoded:", decoded); // Log thông tin token
+      // Token hợp lệ, truy vấn danh sách book
+      const list = await book.find();
+      return res.status(200).json(list);
     });
   } catch (e) {
-    res.status(400).json({ status: false, message: "Có lỗi xảy ra: " + e.message });
+    console.error("Unexpected error:", e.message); // Log lỗi không mong muốn
+    res.status(500).json({
+      status: false,
+      message: "Có lỗi xảy ra: " + e.message,
+    });
   }
 });
+
 
 // 2. Lấy sách thuộc thể loại cụ thể
 router.get("/theloai/:theLoai", async (req, res) => {
