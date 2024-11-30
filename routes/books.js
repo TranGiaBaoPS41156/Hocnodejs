@@ -9,7 +9,7 @@ const upload = require("../util/Upload");
 router.get("/all", async function (req, res) {
   try {
     // Lấy token từ header
-    const token = req.header("Authorization").authHeader.split(' ')[1];
+    const token = req.header("Authorization").token.split(' ')[1];
 
     if ( !token ) {
       return res.status(401).json({ status: false, message: "Không tìm thấy token hoặc định dạng sai" });
