@@ -5,44 +5,28 @@ const JWT = require("jsonwebtoken");
 const config = require("../util/tokenConfig");
 const upload = require("../util/Upload");
 
+// Lấy toàn bộ danh sách 
 router.get("/all", async function (req, res) {
   try {
     // Lấy token từ header
-    const authHeader = req.header("Authorization");
+    const token = req.header("Authorization").authHeader.split(' ')[1];
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({
-        status: false,
-        message: "Không tìm thấy token hoặc định dạng sai",
-      });
+    if ( !token ) {
+      return res.status(401).json({ status: false, message: "Không tìm thấy token hoặc định dạng sai" });
     }
-
-    const token = authHeader.split(" ")[1]; // Lấy phần token
-
     // Xác thực token
-    JWT.verify(token, config.SECRETKEY, async (err, decoded) => {
+    JWT.verify(token, config.SECRETKEY, async function (err, decoded) {
       if (err) {
-        console.error("Token verification error:", err.message); // Log lỗi token
-        return res.status(403).json({
-          status: false,
-          message: "Token không hợp lệ hoặc hết hạn",
-        });
+        return res.status(403).json({ status: false, message: "Token không hợp lệ hoặc hết hạn" });
       }
-
-      console.log("Token verified. Decoded:", decoded); // Log thông tin token
-      // Token hợp lệ, truy vấn danh sách book
-      const list = await book.find();
-      return res.status(200).json(list);
+      // Token hợp lệ, truy vấn danh sách 
+      const list = await book.find(); 
+      res.status(200).json(list);
     });
   } catch (e) {
-    console.error("Unexpected error:", e.message); // Log lỗi không mong muốn
-    res.status(500).json({
-      status: false,
-      message: "Có lỗi xảy ra: " + e.message,
-    });
+    res.status(401).json({ status: false, message: "Có lỗi xảy ra: " + e.message });
   }
 });
-
 
 // 2. Lấy sách thuộc thể loại cụ thể
 router.get("/theloai/:theLoai", async (req, res) => {
