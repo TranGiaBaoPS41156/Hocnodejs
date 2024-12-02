@@ -16,7 +16,7 @@ require("./models/book");
 const indexRouter = require("./routes/index");
 const usersRouter = require("./routes/users");
 const test = require("./routes/test");
-const Product = require("./routes/products");
+
 const Category = require("./routes/category");
 const sinhVienRouter = require("./routes/sinhVienRouter"); // Route cho sinh viên
 const book = require("./routes/books");
@@ -43,7 +43,7 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use("/", indexRouter);
 app.use("/users", usersRouter);
 app.use("/test", test);
-app.use("/products", Product);
+ 
 app.use("/category", Category);
 app.use("/sinhvien", sinhVienRouter); // Sử dụng route cho sinh viên
 app.use("/book", book);
