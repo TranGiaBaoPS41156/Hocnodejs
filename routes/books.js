@@ -5,34 +5,32 @@ const JWT = require("jsonwebtoken");
 const config = require("../util/tokenConfig");
 const upload = require("../util/Upload");
 
-/// Lấy toàn bộ danh sách
-router.get("/all", async function (req, res) {
-  try {
-    // Lấy token từ header Authorization
-    const authHeader = req.header("Authorization");
+/// Middleware xác thực Token
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.header("Authorization");
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res
+      .status(401)
+      .json({ status: false, message: "Không tìm thấy token hoặc định dạng sai" });
+  }
 
-    // Kiểm tra nếu header không tồn tại hoặc không đúng định dạng "Bearer <token>"
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+  const token = authHeader.split(" ")[1];
+  JWT.verify(token, config.SECRETKEY, (err, decoded) => {
+    if (err) {
       return res
-        .status(401)
-        .json({ status: false, message: "Không tìm thấy token hoặc định dạng sai" });
+        .status(403)
+        .json({ status: false, message: "Token không hợp lệ hoặc hết hạn" });
     }
+    req.user = decoded; // Lưu thông tin user từ token (nếu cần)
+    next();
+  });
+};
 
-    // Trích xuất token từ chuỗi "Bearer <token>"
-    const token = authHeader.split(" ")[1];
-
-    // Xác thực token
-    JWT.verify(token, config.SECRETKEY, async function (err, decoded) {
-      if (err) {
-        return res
-          .status(403)
-          .json({ status: false, message: "Token không hợp lệ hoặc hết hạn" });
-      }
-
-      // Token hợp lệ, truy vấn danh sách
-      const list = await book.find();
-      res.status(200).json(list);
-    });
+// 1. Lấy toàn bộ danh sách
+router.get("/all", authenticateToken, async (req, res) => {
+  try {
+    const list = await book.find();
+    res.status(200).json(list);
   } catch (e) {
     res
       .status(500)
@@ -40,9 +38,8 @@ router.get("/all", async function (req, res) {
   }
 });
 
-
 // 2. Lấy sách thuộc thể loại cụ thể
-router.get("/theloai/:theLoai", async (req, res) => {
+router.get("/theloai/:theLoai", authenticateToken, async (req, res) => {
   try {
     const bookList = await book.find({ theLoai: req.params.theLoai });
     res.status(200).json(bookList);
@@ -52,7 +49,7 @@ router.get("/theloai/:theLoai", async (req, res) => {
 });
 
 // 3. Tìm sách có giá trong khoảng
-router.get("/gia", async (req, res) => {
+router.get("/gia", authenticateToken, async (req, res) => {
   try {
     const { min = 0, max = 100000 } = req.query;
     const bookList = await book.find({ gia: { $gte: min, $lte: max } });
@@ -63,7 +60,7 @@ router.get("/gia", async (req, res) => {
 });
 
 // 4. Tìm sách theo tên
-router.get("/detail/:tenSach", async (req, res) => {
+router.get("/detail/:tenSach", authenticateToken, async (req, res) => {
   try {
     const sach = await book.findOne({ tenSach: req.params.tenSach });
     if (sach) {
@@ -77,7 +74,7 @@ router.get("/detail/:tenSach", async (req, res) => {
 });
 
 // 5. Thêm sách mới
-router.post("/add", async (req, res) => {
+router.post("/add", authenticateToken, async (req, res) => {
   try {
     const { tenSach, tacGia, theLoai, gia, soLuongTon } = req.body;
     const newbook = new book({ tenSach, tacGia, theLoai, gia, soLuongTon });
@@ -89,7 +86,7 @@ router.post("/add", async (req, res) => {
 });
 
 // 6. Sửa thông tin sách
-router.put("/edit/:id", async (req, res) => {
+router.put("/edit/:id", authenticateToken, async (req, res) => {
   try {
     const { tenSach, tacGia, theLoai, gia, soLuongTon } = req.body;
     const sach = await book.findById(req.params.id);
@@ -112,7 +109,7 @@ router.put("/edit/:id", async (req, res) => {
 });
 
 // 7. Xóa sách theo ID
-router.delete("/delete/:id", async (req, res) => {
+router.delete("/delete/:id", authenticateToken, async (req, res) => {
   try {
     const sach = await book.findByIdAndDelete(req.params.id);
     if (sach) {
@@ -126,27 +123,35 @@ router.delete("/delete/:id", async (req, res) => {
 });
 
 // 8. Lấy sách có giá cao nhất
-router.get("/max-gia", async (req, res) => {
+router.get("/max-gia", authenticateToken, async (req, res) => {
   try {
     const sach = await book.findOne().sort({ gia: -1 });
-    res.status(200).json(sach);
+    if (sach) {
+      res.status(200).json(sach);
+    } else {
+      res.status(404).json({ message: "Không có sách nào" });
+    }
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
 });
 
 // 9. Lấy sách có số lượng tồn ít nhất
-router.get("/min-stock", async (req, res) => {
+router.get("/min-stock", authenticateToken, async (req, res) => {
   try {
     const sach = await book.findOne().sort({ soLuongTon: 1 });
-    res.status(200).json(sach);
+    if (sach) {
+      res.status(200).json(sach);
+    } else {
+      res.status(404).json({ message: "Không có sách nào" });
+    }
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
 });
 
 // 10. Tải ảnh bìa sách
-router.post("/upload", [upload.single("image")], async (req, res) => {
+router.post("/upload", [authenticateToken, upload.single("image")], async (req, res) => {
   try {
     const { file } = req;
     if (!file) {
